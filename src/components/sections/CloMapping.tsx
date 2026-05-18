@@ -47,12 +47,41 @@ export const CloMapping: React.FC<{ clos: any[], refresh: () => void }> = ({ clo
     setStatus({ message: 'กำลังบันทึก CLO Mapping...', type: 'ok' });
     try {
       await api.saveCLOBatch({ items: cloRows });
-      setStatus({ message: 'บันทึก CLO Mapping เรียบร้อยแล้ว และยังคงข้อมูลในฟอร์มไว้', type: 'ok' });
+      setStatus({ message: 'บันทึก CLO Mapping เรียบร้อยแล้ว', type: 'ok' });
       refresh();
+      setCloRows([]);
+      setTimeout(() => handleAddRow(), 0);
     } catch (err: any) {
       setStatus({ message: `Error: ${err.message}`, type: 'error' });
     }
     setLoading(false);
+  };
+
+  const handleEditCLO = (clo: any) => {
+    setCloRows([{
+      id: clo.CLOID,
+      cloNo: clo.CLONo,
+      bloomLevel: clo.BloomLevel,
+      assessmentMethod: clo.AssessmentMethod,
+      cloStatement: clo.CLOStatement,
+      poNo: clo.PONo,
+      piNo: clo.PINo
+    }]);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleDeleteCLO = async (cloId: string, cloNo: string) => {
+    if (confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบ ${cloNo}?`)) {
+      setLoading(true);
+      try {
+        await api.deleteCLO(cloId);
+        setStatus({ message: `ลบ ${cloNo} เรียบร้อยแล้ว`, type: 'ok' });
+        refresh();
+      } catch (err: any) {
+        setStatus({ message: `Error: ${err.message}`, type: 'error' });
+      }
+      setLoading(false);
+    }
   };
 
   return (
@@ -81,32 +110,32 @@ export const CloMapping: React.FC<{ clos: any[], refresh: () => void }> = ({ clo
                 </button>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <label>CLO Code
+                  <label>CLO Code (รหัส CLO)
                     <input value={row.cloNo} readOnly className="bg-slate-50 cursor-not-allowed font-bold" />
                   </label>
-                  <label>Bloom Level
+                  <label>Bloom Level (ระดับ Bloom)
                     <select value={row.bloomLevel} onChange={e => handleChange(row.id, 'bloomLevel', e.target.value)}>
                       <option value="">Select Bloom Level</option>
                       {BLOOM_LEVELS.map(b => <option key={b} value={b}>{b}</option>)}
                     </select>
                   </label>
-                  <label>Assessment Method
+                  <label>Assessment Method (วิธีการประเมิน)
                     <input placeholder="Exam / Assignment / Project" value={row.assessmentMethod} onChange={e => handleChange(row.id, 'assessmentMethod', e.target.value)} />
                   </label>
                 </div>
                 
-                <label className="mt-4">CLO Statement
+                <label className="mt-4">CLO Statement (รายละเอียด CLO)
                   <textarea className="min-h-[80px]" placeholder="ระบุ CLO" value={row.cloStatement} onChange={e => handleChange(row.id, 'cloStatement', e.target.value)} />
                 </label>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                  <label>Mapped PO
+                  <label>Mapped PO (เลือก PO)
                     <select value={row.poNo} onChange={e => handleChange(row.id, 'poNo', e.target.value)}>
                       <option value="">Select PO</option>
                       {FALLBACK_PO.map(po => <option key={po.PONo} value={po.PONo}>{po.PONo} - {po.POName}</option>)}
                     </select>
                   </label>
-                  <label>Mapped PI
+                  <label>Mapped PI (เลือก PI)
                     <select value={row.piNo} onChange={e => handleChange(row.id, 'piNo', e.target.value)} disabled={!row.poNo}>
                       <option value="">Select PI</option>
                       {availablePIs.map(pi => (
@@ -161,6 +190,7 @@ export const CloMapping: React.FC<{ clos: any[], refresh: () => void }> = ({ clo
                   <th className="p-4">Assessment</th>
                   <th className="p-4">PO</th>
                   <th className="p-4">PI</th>
+                  <th className="p-4 text-center">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -179,6 +209,24 @@ export const CloMapping: React.FC<{ clos: any[], refresh: () => void }> = ({ clo
                     <td className="p-4">
                       <div className="font-bold">{r.PINo}</div>
                       <div className="text-xs text-slate-500 mt-1 max-w-[200px] line-clamp-2">{r.PIDescription}</div>
+                    </td>
+                    <td className="p-4 text-center">
+                      <div className="flex gap-2 justify-center">
+                        <button 
+                          onClick={() => handleEditCLO(r)}
+                          className="text-indigo-600 hover:text-indigo-800 font-medium text-sm px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 rounded-md transition-colors"
+                          disabled={loading}
+                        >
+                          แก้ไข
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteCLO(r.CLOID, r.CLONo)}
+                          className="text-red-600 hover:text-red-800 font-medium text-sm px-3 py-1.5 bg-red-50 hover:bg-red-100 rounded-md transition-colors"
+                          disabled={loading}
+                        >
+                          ลบ
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

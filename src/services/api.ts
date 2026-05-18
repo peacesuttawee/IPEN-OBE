@@ -12,6 +12,22 @@ const saveToStorage = (key: string, value: any) => {
   localStorage.setItem(key, JSON.stringify(value));
 };
 
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxviWiWzUsGE1JXP4UTOgUSq5yqpodlgMLqKI_KO7s7ZKMGsYWnUnbc64xvgJYlgeRWJA/exec';
+
+const syncToGoogleSheets = async (action: string, data: any) => {
+  try {
+    // ใช้ text/plain เพื่อเลี่ยงปัญหา CORS preflight ในบราวเซอร์
+    await fetch(GOOGLE_SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action, data })
+    });
+  } catch (error) {
+    console.error('Failed to sync to Google Sheets:', error);
+  }
+};
+
 export const api = {
   async getInitialData() {
     await delay(500); // simulate network
@@ -46,12 +62,30 @@ export const api = {
       courses.push(formatted);
     }
     saveToStorage('ipen_courses', courses);
+    
+    // Sync to Google Sheets
+    syncToGoogleSheets('saveCourse', formatted);
+    
+    return { success: true };
+  },
+
+  async deleteCourse(courseCode: string) {
+    await delay(300);
+    const courses = getFromStorage('ipen_courses', []);
+    const updatedCourses = courses.filter((c: any) => c.CourseCode !== courseCode);
+    saveToStorage('ipen_courses', updatedCourses);
+    
+    // Sync to Google Sheets
+    syncToGoogleSheets('deleteCourse', { CourseCode: courseCode });
+    
     return { success: true };
   },
 
   async saveCLOBatch(payload: any) {
     await delay(600);
-    const items = payload.items.map((item: any) => {
+    const existingClos = getFromStorage('ipen_clo', []);
+
+    const newItems = payload.items.map((item: any) => {
       const piData = FALLBACK_PI.find(p => p.PINo === item.piNo) || {} as any;
       const poData = FALLBACK_PO.find(p => p.PONo === item.poNo) || {} as any;
       return {
@@ -63,18 +97,48 @@ export const api = {
         POName: poData.POName || '',
         PINo: item.piNo,
         PIDescription: piData.PIDescription || '',
-        CLOID: Math.random().toString(36).substr(2, 9)
+        CLOID: item.id || Math.random().toString(36).substr(2, 9)
       };
     });
     
-    // For demo, just replace the whole array
-    saveToStorage('ipen_clo', items);
+    // Merge logic
+    const updatedClos = [...existingClos];
+    newItems.forEach((newItem: any) => {
+      const idx = updatedClos.findIndex((c: any) => c.CLOID === newItem.CLOID);
+      if (idx > -1) {
+        updatedClos[idx] = newItem;
+      } else {
+        updatedClos.push(newItem);
+      }
+    });
+
+    saveToStorage('ipen_clo', updatedClos);
+    
+    // Sync to Google Sheets
+    syncToGoogleSheets('saveCLOBatch', newItems);
+    
+    return { success: true };
+  },
+
+  async deleteCLO(cloId: string) {
+    await delay(300);
+    const clos = getFromStorage('ipen_clo', []);
+    const updatedClos = clos.filter((c: any) => c.CLOID !== cloId);
+    saveToStorage('ipen_clo', updatedClos);
+    
+    // Sync to Google Sheets
+    syncToGoogleSheets('deleteCLO', { CLOID: cloId });
+    
     return { success: true };
   },
 
   async saveSyllabus(payload: any) {
     await delay(600);
     saveToStorage('ipen_syllabus', payload);
+    
+    // Sync to Google Sheets
+    syncToGoogleSheets('saveSyllabus', payload);
+    
     return { success: true };
   },
 

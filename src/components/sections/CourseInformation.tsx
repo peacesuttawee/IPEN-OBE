@@ -47,6 +47,20 @@ export const CourseInformation: React.FC<{ courses: any[], refresh: () => void }
     setLoading(false);
   };
 
+  const handleDeleteCourse = async (courseCode: string) => {
+    if (confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบรายวิชา ${courseCode}?`)) {
+      setLoading(true);
+      try {
+        await api.deleteCourse(courseCode);
+        setStatus({ message: `ลบรายวิชา ${courseCode} เรียบร้อยแล้ว`, type: 'ok' });
+        refresh();
+      } catch (err: any) {
+        setStatus({ message: `Error: ${err.message}`, type: 'error' });
+      }
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="card">
@@ -54,33 +68,33 @@ export const CourseInformation: React.FC<{ courses: any[], refresh: () => void }
         <p className="text-slate-500 text-sm mb-6">กด Save แล้วข้อมูลในฟอร์มจะไม่ถูกเคลียร์</p>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          <label>Course Code <span>*</span>
+          <label>Course Code (รหัสวิชา) <span>*</span>
             <input name="courseCode" value={formData.courseCode} onChange={handleChange} placeholder="เช่น EIM313" />
           </label>
-          <label>Course Name <span>*</span>
+          <label>Course Name (ชื่อวิชา) <span>*</span>
             <input name="courseName" value={formData.courseName} onChange={handleChange} placeholder="เช่น Digital Signal Processing" />
           </label>
-          <label>Instructor Name <span>*</span>
+          <label>Instructor Name (ชื่อผู้สอน) <span>*</span>
             <input name="instructorName" value={formData.instructorName} onChange={handleChange} placeholder="ชื่อผู้สอน" />
           </label>
-          <label>Email <span>*</span>
+          <label>Email (อีเมล) <span>*</span>
             <input name="email" type="email" value={formData.email} onChange={handleChange} placeholder="email@tu.ac.th" />
           </label>
-          <label>Semester <span>*</span>
+          <label>Semester (ภาคการศึกษา) <span>*</span>
             <input name="semester" value={formData.semester} onChange={handleChange} placeholder="เช่น 1 หรือ 1/2567" />
           </label>
-          <label>Academic Year <span>*</span>
+          <label>Academic Year (ปีการศึกษา) <span>*</span>
             <input name="academicYear" value={formData.academicYear} onChange={handleChange} placeholder="เช่น 2567" />
           </label>
-          <label>Prerequisite Course
+          <label>Prerequisite Course (วิชาบังคับก่อน)
             <input name="prerequisiteCourse" value={formData.prerequisiteCourse} onChange={handleChange} placeholder="เช่น Circuit Analysis / None" />
           </label>
-          <label className="md:col-span-2">Other
+          <label className="md:col-span-2">Other (อื่นๆ)
             <input name="other" value={formData.other} onChange={handleChange} placeholder="ข้อมูลอื่น ๆ" />
           </label>
         </div>
         
-        <label className="mt-5">Course Description
+        <label className="mt-5">Course Description (คำอธิบายรายวิชา)
           <textarea name="courseDescription" value={formData.courseDescription} onChange={handleChange} placeholder="คำอธิบายรายวิชา" />
         </label>
         
@@ -115,6 +129,7 @@ export const CourseInformation: React.FC<{ courses: any[], refresh: () => void }
                   <th className="p-4">Email</th>
                   <th className="p-4">Semester</th>
                   <th className="p-4">Academic Year</th>
+                  <th className="p-4 text-center">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -126,6 +141,15 @@ export const CourseInformation: React.FC<{ courses: any[], refresh: () => void }
                     <td className="p-4 text-slate-500">{c.Email}</td>
                     <td className="p-4">{c.Semester}</td>
                     <td className="p-4">{c.AcademicYear}</td>
+                    <td className="p-4 text-center">
+                      <button 
+                        onClick={() => handleDeleteCourse(c.CourseCode)}
+                        className="text-red-600 hover:text-red-800 font-medium text-sm px-3 py-1.5 bg-red-50 hover:bg-red-100 rounded-md transition-colors"
+                        disabled={loading}
+                      >
+                        ลบ
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>

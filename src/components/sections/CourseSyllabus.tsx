@@ -107,10 +107,10 @@ export const CourseSyllabus: React.FC = () => {
               <label className="mb-0 text-xs">Topic / หัวข้อ
                 <input value={row.topic} onChange={e => handlePlanChange(setTeachingPlans, row.id, 'topic', e.target.value)} placeholder="หัวข้อการสอน" />
               </label>
-              <label className="mb-0 text-xs">CLO
+              <label className="mb-0 text-xs">CLO (รหัส CLO)
                 <input value={row.clo} onChange={e => handlePlanChange(setTeachingPlans, row.id, 'clo', e.target.value)} placeholder="เช่น CLO1" />
               </label>
-              <label className="mb-0 text-xs">Activity
+              <label className="mb-0 text-xs">Activity (กิจกรรม)
                 <input value={row.activity} onChange={e => handlePlanChange(setTeachingPlans, row.id, 'activity', e.target.value)} placeholder="Lecture / Lab / Discussion" />
               </label>
             </div>
@@ -133,16 +133,16 @@ export const CourseSyllabus: React.FC = () => {
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
-              <label className="mb-0 text-xs">Assessment Method
+              <label className="mb-0 text-xs">Assessment Method (วิธีการประเมิน)
                 <input value={row.method} onChange={e => handlePlanChange(setAssessmentPlans, row.id, 'method', e.target.value)} placeholder="Exam / Assignment / Project" />
               </label>
-              <label className="mb-0 text-xs">Weight
+              <label className="mb-0 text-xs">Weight (สัดส่วนคะแนน)
                 <input value={row.weight} onChange={e => handlePlanChange(setAssessmentPlans, row.id, 'weight', e.target.value)} placeholder="30%" />
               </label>
-              <label className="mb-0 text-xs">CLO
+              <label className="mb-0 text-xs">CLO (รหัส CLO)
                 <input value={row.clo} onChange={e => handlePlanChange(setAssessmentPlans, row.id, 'clo', e.target.value)} placeholder="เช่น CLO1" />
               </label>
-              <label className="mb-0 text-xs">PI
+              <label className="mb-0 text-xs">PI (รหัส PI)
                 <input value={row.pi} onChange={e => handlePlanChange(setAssessmentPlans, row.id, 'pi', e.target.value)} placeholder="เช่น PI2.3" />
               </label>
             </div>

@@ -12,7 +12,7 @@ const saveToStorage = (key: string, value: any) => {
   localStorage.setItem(key, JSON.stringify(value));
 };
 
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby0d5tMUhDxvRKC9e7Z81HhLPerEs5RhcAMfl48gQggQAqBlPBkGx0B4Vi1CEn6xEA6/exec';
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxQ-B4LOWACg3PKLx-KfetUvqtWy233OZ0xOMYSpiJ0ZcvUXalwAmT7sYW9u2k-9plh/exec';
 
 const syncToGoogleSheets = async (action: string, data: any) => {
   try {

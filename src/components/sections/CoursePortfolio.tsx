@@ -48,7 +48,12 @@ export const CoursePortfolio: React.FC<{ clos: any[], refresh: () => void, activ
         instructorComment: portfolioData[c.CLOID]?.comment,
         files: portfolioData[c.CLOID]?.files
       }));
-      await api.savePortfolio({ courseCode: activeCourse?.CourseCode, items });
+      await api.savePortfolio({ 
+        courseCode: activeCourse?.CourseCode, 
+        academicYear: activeCourse?.AcademicYear,
+        semester: activeCourse?.Semester,
+        items 
+      });
       setStatus({ message: 'บันทึก Portfolio และหลักฐานเรียบร้อยแล้ว', type: 'ok' });
       refresh();
     } catch (err: any) {

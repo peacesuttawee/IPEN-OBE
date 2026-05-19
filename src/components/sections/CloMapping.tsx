@@ -50,7 +50,12 @@ export const CloMapping: React.FC<{ clos: any[], refresh: () => void, activeCour
     setLoading(true);
     setStatus({ message: 'กำลังบันทึก CLO Mapping...', type: 'ok' });
     try {
-      await api.saveCLOBatch({ items: cloRows, courseCode: activeCourse?.CourseCode });
+      await api.saveCLOBatch({ 
+        items: cloRows, 
+        courseCode: activeCourse?.CourseCode,
+        academicYear: activeCourse?.AcademicYear,
+        semester: activeCourse?.Semester
+      });
       setStatus({ message: 'บันทึก CLO Mapping เรียบร้อยแล้ว', type: 'ok' });
       refresh();
       const nextNo = filteredClos.length + cloRows.length + 1;

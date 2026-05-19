@@ -71,8 +71,8 @@ export const api = {
       Semester: courseData.semester,
       CourseCode: courseData.courseCode,
       CourseName: courseData.courseName,
-      'Instructor Name': courseData.instructorName,
-      'Instructor Email': courseData.email,
+      InstructorName: courseData.instructorName,
+      InstructorEmail: courseData.email,
       CourseDescription: courseData.courseDescription,
       ProgramName: courseData.programName,
       Status: 'Draft'
@@ -144,6 +144,9 @@ export const api = {
     
     // Sync to Google Sheets
     const syncItems = newItems.map((item: any) => ({
+      CourseID: `${payload.courseCode}-${payload.academicYear}-${payload.semester}`,
+      AcademicYear: payload.academicYear,
+      Semester: payload.semester,
       CourseCode: payload.courseCode,
       CLO_Number: item.CLONo,
       CLO_Description: item.CLOStatement,
@@ -183,7 +186,14 @@ export const api = {
     saveToStorage('ipen_syllabus_list', list);
     
     // Sync to Google Sheets
-    syncToGoogleSheets('saveSyllabus', formatted);
+    const syncPayload = {
+      CourseID: `${payload.courseCode}-${payload.academicYear}-${payload.semester}`,
+      AcademicYear: payload.academicYear,
+      Semester: payload.semester,
+      CourseCode: payload.courseCode,
+      ...formatted
+    };
+    syncToGoogleSheets('saveSyllabus', syncPayload);
     
     return { success: true };
   },
@@ -201,6 +211,9 @@ export const api = {
     saveToStorage('ipen_portfolio_list', list);
     
     const syncItems = payload.items.map((item: any) => ({
+      CourseID: `${payload.courseCode}-${payload.academicYear}-${payload.semester}`,
+      AcademicYear: payload.academicYear,
+      Semester: payload.semester,
       CourseCode: payload.courseCode,
       CLO_Number: item.cloNo,
       Target_Percent: item.expectedPercent,

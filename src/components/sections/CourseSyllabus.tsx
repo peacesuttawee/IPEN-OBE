@@ -76,6 +76,8 @@ export const CourseSyllabus: React.FC<{ activeCourse?: any, data?: any }> = ({ a
     try {
       const payload = {
         courseCode: activeCourse?.CourseCode,
+        academicYear: activeCourse?.AcademicYear,
+        semester: activeCourse?.Semester,
         teachingDayTime: formData.teachingDayTime,
         teachingPlan: teachingPlans,
         assessmentPlan: assessmentPlans,

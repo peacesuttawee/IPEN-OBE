@@ -39,7 +39,18 @@ export const CourseInformation: React.FC<{ courses: any[], refresh: () => void, 
     try {
       await api.saveCourse(formData);
       setStatus({ message: 'บันทึกข้อมูลรายวิชาเรียบร้อยแล้ว โดยยังคงข้อมูลในฟอร์มไว้', type: 'ok' });
-      if (setActiveCourse) setActiveCourse(formData);
+      if (setActiveCourse) {
+        setActiveCourse({
+          CourseCode: formData.courseCode,
+          CourseName: formData.courseName,
+          InstructorName: formData.instructorName,
+          Email: formData.email,
+          Semester: formData.semester,
+          AcademicYear: formData.academicYear,
+          ProgramName: formData.programName,
+          CourseDescription: formData.courseDescription,
+        });
+      }
       if (setActiveTab) setActiveTab('cloMapping');
       refresh();
     } catch (err: any) {

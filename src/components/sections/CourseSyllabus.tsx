@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../../services/api';
 import { Plus, Trash2 } from 'lucide-react';
 
-export const CourseSyllabus: React.FC = () => {
+export const CourseSyllabus: React.FC<{ activeCourse?: any, data?: any }> = ({ activeCourse, data }) => {
   const [formData, setFormData] = useState({
     teachingDayTime: '',
     teachingMaterials: '',
@@ -16,9 +16,23 @@ export const CourseSyllabus: React.FC = () => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (teachingPlans.length === 0) handleAddTeachingPlan();
-    if (assessmentPlans.length === 0) handleAddAssessmentPlan();
-  }, []);
+    if (activeCourse) {
+      const syllabusData = data?.syllabusList?.find((s: any) => s.CourseCode === activeCourse.CourseCode);
+      if (syllabusData) {
+        setFormData({
+          teachingDayTime: syllabusData.teachingDayTime || '',
+          teachingMaterials: syllabusData.teachingMaterials || '',
+          other: syllabusData.other || ''
+        });
+        setTeachingPlans(syllabusData.teachingPlan?.length > 0 ? syllabusData.teachingPlan : [{ id: Math.random().toString(), week: '', topic: '', clo: '', activity: '' }]);
+        setAssessmentPlans(syllabusData.assessmentPlan?.length > 0 ? syllabusData.assessmentPlan : [{ id: Math.random().toString(), method: '', weight: '', clo: '', pi: '' }]);
+      } else {
+        handleClear();
+      }
+    } else {
+      handleClear();
+    }
+  }, [activeCourse, data]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -61,6 +75,7 @@ export const CourseSyllabus: React.FC = () => {
     setStatus({ message: 'กำลังบันทึก Course Syllabus...', type: 'ok' });
     try {
       const payload = {
+        courseCode: activeCourse?.CourseCode,
         teachingDayTime: formData.teachingDayTime,
         teachingPlan: teachingPlans,
         assessmentPlan: assessmentPlans,

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { api } from '../../services/api';
 
-export const CourseInformation: React.FC<{ courses: any[], refresh: () => void }> = ({ courses, refresh }) => {
+export const CourseInformation: React.FC<{ courses: any[], refresh: () => void, setActiveCourse?: (c: any) => void, setActiveTab?: (t: string) => void }> = ({ courses, refresh, setActiveCourse, setActiveTab }) => {
   const [formData, setFormData] = useState({
     courseCode: '',
     courseName: '',
@@ -9,8 +9,7 @@ export const CourseInformation: React.FC<{ courses: any[], refresh: () => void }
     email: '',
     semester: '',
     academicYear: '',
-    prerequisiteCourse: '',
-    other: '',
+    programName: '',
     courseDescription: ''
   });
   
@@ -24,7 +23,7 @@ export const CourseInformation: React.FC<{ courses: any[], refresh: () => void }
   const handleClear = () => {
     setFormData({
       courseCode: '', courseName: '', instructorName: '', email: '',
-      semester: '', academicYear: '', prerequisiteCourse: '', other: '', courseDescription: ''
+      semester: '', academicYear: '', programName: '', courseDescription: ''
     });
     setStatus(null);
   };
@@ -40,6 +39,8 @@ export const CourseInformation: React.FC<{ courses: any[], refresh: () => void }
     try {
       await api.saveCourse(formData);
       setStatus({ message: 'บันทึกข้อมูลรายวิชาเรียบร้อยแล้ว โดยยังคงข้อมูลในฟอร์มไว้', type: 'ok' });
+      if (setActiveCourse) setActiveCourse(formData);
+      if (setActiveTab) setActiveTab('cloMapping');
       refresh();
     } catch (err: any) {
       setStatus({ message: `Error: ${err.message}`, type: 'error' });
@@ -86,11 +87,8 @@ export const CourseInformation: React.FC<{ courses: any[], refresh: () => void }
           <label>Academic Year (ปีการศึกษา) <span>*</span>
             <input name="academicYear" value={formData.academicYear} onChange={handleChange} placeholder="เช่น 2567" />
           </label>
-          <label>Prerequisite Course (วิชาบังคับก่อน)
-            <input name="prerequisiteCourse" value={formData.prerequisiteCourse} onChange={handleChange} placeholder="เช่น Circuit Analysis / None" />
-          </label>
-          <label className="md:col-span-2">Other (อื่นๆ)
-            <input name="other" value={formData.other} onChange={handleChange} placeholder="ข้อมูลอื่น ๆ" />
+          <label className="md:col-span-3">Program Name (ชื่อหลักสูตร)
+            <input name="programName" value={formData.programName} onChange={handleChange} placeholder="เช่น วิศวกรรมอิเล็กทรอนิกส์และเทคโนโลยีอัจฉริยะ" />
           </label>
         </div>
         
@@ -129,6 +127,7 @@ export const CourseInformation: React.FC<{ courses: any[], refresh: () => void }
                   <th className="p-4">Email</th>
                   <th className="p-4">Semester</th>
                   <th className="p-4">Academic Year</th>
+                  <th className="p-4">Program Name</th>
                   <th className="p-4 text-center">Action</th>
                 </tr>
               </thead>
@@ -141,14 +140,27 @@ export const CourseInformation: React.FC<{ courses: any[], refresh: () => void }
                     <td className="p-4 text-slate-500">{c.Email}</td>
                     <td className="p-4">{c.Semester}</td>
                     <td className="p-4">{c.AcademicYear}</td>
+                    <td className="p-4">{c.ProgramName}</td>
                     <td className="p-4 text-center">
-                      <button 
-                        onClick={() => handleDeleteCourse(c.CourseCode)}
-                        className="text-red-600 hover:text-red-800 font-medium text-sm px-3 py-1.5 bg-red-50 hover:bg-red-100 rounded-md transition-colors"
-                        disabled={loading}
-                      >
-                        ลบ
-                      </button>
+                      <div className="flex gap-2 justify-center">
+                        <button 
+                          onClick={() => {
+                            if (setActiveCourse) setActiveCourse(c);
+                            if (setActiveTab) setActiveTab('cloMapping');
+                          }}
+                          className="text-indigo-600 hover:text-indigo-800 font-medium text-sm px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 rounded-md transition-colors"
+                          disabled={loading}
+                        >
+                          เลือก
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteCourse(c.CourseCode)}
+                          className="text-red-600 hover:text-red-800 font-medium text-sm px-3 py-1.5 bg-red-50 hover:bg-red-100 rounded-md transition-colors"
+                          disabled={loading}
+                        >
+                          ลบ
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

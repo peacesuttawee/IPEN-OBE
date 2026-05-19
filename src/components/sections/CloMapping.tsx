@@ -1,21 +1,25 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { api } from '../../services/api';
 import { FALLBACK_PO, FALLBACK_PI, BLOOM_LEVELS } from '../../data/constants';
 import { Plus, Trash2 } from 'lucide-react';
 
-export const CloMapping: React.FC<{ clos: any[], refresh: () => void }> = ({ clos, refresh }) => {
-  const [cloRows, setCloRows] = useState<any[]>([]);
+export const CloMapping: React.FC<{ clos: any[], refresh: () => void, activeCourse?: any }> = ({ clos, refresh, activeCourse }) => {
+  const filteredClos = clos.filter(c => c.CourseCode === activeCourse?.CourseCode);
+
+  const [cloRows, setCloRows] = useState<any[]>(() => [{
+    id: Math.random().toString(36).substr(2, 9),
+    cloNo: `CLO${filteredClos.length + 1}`,
+    bloomLevel: '',
+    assessmentMethod: '',
+    cloStatement: '',
+    poNo: '',
+    piNo: ''
+  }]);
   const [status, setStatus] = useState<{message: string, type: 'ok'|'error'} | null>(null);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (cloRows.length === 0) {
-      handleAddRow();
-    }
-  }, []);
-
   const handleAddRow = () => {
-    const nextNo = clos.length + cloRows.length + 1;
+    const nextNo = filteredClos.length + cloRows.length + 1;
     setCloRows(prev => [...prev, {
       id: Math.random().toString(36).substr(2, 9),
       cloNo: `CLO${nextNo}`,
@@ -46,11 +50,19 @@ export const CloMapping: React.FC<{ clos: any[], refresh: () => void }> = ({ clo
     setLoading(true);
     setStatus({ message: 'กำลังบันทึก CLO Mapping...', type: 'ok' });
     try {
-      await api.saveCLOBatch({ items: cloRows });
+      await api.saveCLOBatch({ items: cloRows, courseCode: activeCourse?.CourseCode });
       setStatus({ message: 'บันทึก CLO Mapping เรียบร้อยแล้ว', type: 'ok' });
       refresh();
-      setCloRows([]);
-      setTimeout(() => handleAddRow(), 0);
+      const nextNo = filteredClos.length + cloRows.length + 1;
+      setCloRows([{
+        id: Math.random().toString(36).substr(2, 9),
+        cloNo: `CLO${nextNo}`,
+        bloomLevel: '',
+        assessmentMethod: '',
+        cloStatement: '',
+        poNo: '',
+        piNo: ''
+      }]);
     } catch (err: any) {
       setStatus({ message: `Error: ${err.message}`, type: 'error' });
     }
@@ -84,6 +96,7 @@ export const CloMapping: React.FC<{ clos: any[], refresh: () => void }> = ({ clo
     }
   };
 
+  // removed filteredClos from here since it's moved up
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="card">
@@ -174,8 +187,8 @@ export const CloMapping: React.FC<{ clos: any[], refresh: () => void }> = ({ clo
       </div>
 
       <div className="card">
-        <h3 className="text-lg font-extrabold text-slate-800 mb-6">Saved CLOs</h3>
-        {clos.length === 0 ? (
+        <h3 className="text-lg font-extrabold text-slate-800 mb-6">Saved CLOs {activeCourse && `(${activeCourse.CourseCode})`}</h3>
+        {filteredClos.length === 0 ? (
           <div className="text-center p-8 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50">
             <p className="text-slate-500 font-medium">ยังไม่มี CLO ที่บันทึกไว้</p>
           </div>
@@ -194,7 +207,7 @@ export const CloMapping: React.FC<{ clos: any[], refresh: () => void }> = ({ clo
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {clos.map((r, i) => (
+                {filteredClos.map((r, i) => (
                   <tr key={i} className="hover:bg-slate-50/50 transition-colors">
                     <td className="p-4 font-bold text-slate-900 whitespace-nowrap">{r.CLONo}</td>
                     <td className="p-4 min-w-[200px]">{r.CLOStatement}</td>

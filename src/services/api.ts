@@ -12,7 +12,7 @@ const saveToStorage = (key: string, value: any) => {
   localStorage.setItem(key, JSON.stringify(value));
 };
 
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxviWiWzUsGE1JXP4UTOgUSq5yqpodlgMLqKI_KO7s7ZKMGsYWnUnbc64xvgJYlgeRWJA/exec';
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby0d5tMUhDxvRKC9e7Z81HhLPerEs5RhcAMfl48gQggQAqBlPBkGx0B4Vi1CEn6xEA6/exec';
 
 const syncToGoogleSheets = async (action: string, data: any) => {
   try {
@@ -36,6 +36,8 @@ export const api = {
       pi: FALLBACK_PI,
       courses: getFromStorage('ipen_courses', []),
       cloMapped: getFromStorage('ipen_clo', []),
+      syllabusList: getFromStorage('ipen_syllabus_list', []),
+      portfolioList: getFromStorage('ipen_portfolio_list', []),
     };
   },
 
@@ -51,8 +53,7 @@ export const api = {
       Email: courseData.email,
       Semester: courseData.semester,
       AcademicYear: courseData.academicYear,
-      PrerequisiteCourse: courseData.prerequisiteCourse,
-      Other: courseData.other,
+      ProgramName: courseData.programName,
       CourseDescription: courseData.courseDescription,
     };
 
@@ -64,7 +65,19 @@ export const api = {
     saveToStorage('ipen_courses', courses);
     
     // Sync to Google Sheets
-    syncToGoogleSheets('saveCourse', formatted);
+    const syncPayload = {
+      CourseID: `${courseData.courseCode}-${courseData.academicYear}-${courseData.semester}`,
+      AcademicYear: courseData.academicYear,
+      Semester: courseData.semester,
+      CourseCode: courseData.courseCode,
+      CourseName: courseData.courseName,
+      'Instructor Name': courseData.instructorName,
+      'Instructor Email': courseData.email,
+      CourseDescription: courseData.courseDescription,
+      ProgramName: courseData.programName,
+      Status: 'Draft'
+    };
+    syncToGoogleSheets('saveCourse', syncPayload);
     
     return { success: true };
   },
@@ -75,6 +88,20 @@ export const api = {
     const updatedCourses = courses.filter((c: any) => c.CourseCode !== courseCode);
     saveToStorage('ipen_courses', updatedCourses);
     
+    // Cascade delete related CLOs
+    const clos = getFromStorage('ipen_clo', []);
+    const updatedClos = clos.filter((c: any) => c.CourseCode !== courseCode);
+    saveToStorage('ipen_clo', updatedClos);
+
+    // Delete syllabus (since it's a single object right now, maybe we make it an array? No, the code says saveToStorage('ipen_syllabus', payload). We need to change that to an array or map)
+    const syllabusAll = getFromStorage('ipen_syllabus_list', []);
+    const updatedSyllabus = syllabusAll.filter((s: any) => s.CourseCode !== courseCode);
+    saveToStorage('ipen_syllabus_list', updatedSyllabus);
+    
+    const portfoliosAll = getFromStorage('ipen_portfolio_list', []);
+    const updatedPortfolios = portfoliosAll.filter((p: any) => p.CourseCode !== courseCode);
+    saveToStorage('ipen_portfolio_list', updatedPortfolios);
+
     // Sync to Google Sheets
     syncToGoogleSheets('deleteCourse', { CourseCode: courseCode });
     
@@ -89,6 +116,7 @@ export const api = {
       const piData = FALLBACK_PI.find(p => p.PINo === item.piNo) || {} as any;
       const poData = FALLBACK_PO.find(p => p.PONo === item.poNo) || {} as any;
       return {
+        CourseCode: payload.courseCode,
         CLONo: item.cloNo,
         CLOStatement: item.cloStatement,
         BloomLevel: item.bloomLevel,
@@ -115,7 +143,17 @@ export const api = {
     saveToStorage('ipen_clo', updatedClos);
     
     // Sync to Google Sheets
-    syncToGoogleSheets('saveCLOBatch', newItems);
+    const syncItems = newItems.map((item: any) => ({
+      CourseCode: payload.courseCode,
+      CLO_Number: item.CLONo,
+      CLO_Description: item.CLOStatement,
+      PO: item.PONo,
+      PI: item.PINo,
+      PI_Description: item.PIDescription,
+      PO_Description: item.POName,
+      Assessment_Method: item.AssessmentMethod
+    }));
+    syncToGoogleSheets('saveCLOBatch', syncItems);
     
     return { success: true };
   },
@@ -134,17 +172,47 @@ export const api = {
 
   async saveSyllabus(payload: any) {
     await delay(600);
-    saveToStorage('ipen_syllabus', payload);
+    const list = getFromStorage('ipen_syllabus_list', []);
+    const idx = list.findIndex((s: any) => s.CourseCode === payload.courseCode);
+    const formatted = { CourseCode: payload.courseCode, ...payload };
+    if (idx > -1) {
+      list[idx] = formatted;
+    } else {
+      list.push(formatted);
+    }
+    saveToStorage('ipen_syllabus_list', list);
     
     // Sync to Google Sheets
-    syncToGoogleSheets('saveSyllabus', payload);
+    syncToGoogleSheets('saveSyllabus', formatted);
     
     return { success: true };
   },
 
   async savePortfolio(payload: any) {
     await delay(600);
-    saveToStorage('ipen_portfolio', payload);
+    const list = getFromStorage('ipen_portfolio_list', []);
+    const idx = list.findIndex((p: any) => p.CourseCode === payload.courseCode);
+    const formatted = { CourseCode: payload.courseCode, ...payload };
+    if (idx > -1) {
+      list[idx] = formatted;
+    } else {
+      list.push(formatted);
+    }
+    saveToStorage('ipen_portfolio_list', list);
+    
+    const syncItems = payload.items.map((item: any) => ({
+      CourseCode: payload.courseCode,
+      CLO_Number: item.cloNo,
+      Target_Percent: item.expectedPercent,
+      Attainment_Percent: item.actualPercent,
+      Average_Score_Percent: item.averageScorePercent,
+      Exam_File_URL: item.files?.Exam_File_URL || '',
+      Question_Paper_File_URL: item.files?.Question_Paper_File_URL || '',
+      Answer_File_URL: item.files?.Answer_File_URL || '',
+      Comment: item.instructorComment
+    }));
+    syncToGoogleSheets('savePortfolio', syncItems);
+    
     return { success: true };
   },
 

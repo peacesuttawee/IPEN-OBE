@@ -23,6 +23,7 @@ const subtitleMap: Record<string, string> = {
 
 function App() {
   const [activeTab, setActiveTab] = useState('courseInfo');
+  const [activeCourse, setActiveCourse] = useState<any>(null);
   const [data, setData] = useState({ courses: [], cloMapped: [] });
   const [loading, setLoading] = useState(true);
 
@@ -48,7 +49,7 @@ function App() {
 
   return (
     <div className="flex min-h-screen bg-slate-50 text-slate-900 font-sans">
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} activeCourse={activeCourse} setActiveCourse={setActiveCourse} />
       
       <main className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto">
         <Topbar 
@@ -56,6 +57,7 @@ function App() {
           subtitle={subtitleMap[activeTab]} 
           onRefresh={loadData}
           onDebug={handleDebug}
+          activeCourse={activeCourse}
         />
         
         <div className="p-4 md:p-8 max-w-6xl mx-auto w-full pb-24">
@@ -65,10 +67,10 @@ function App() {
             </div>
           ) : (
             <>
-              {activeTab === 'courseInfo' && <CourseInformation courses={data.courses} refresh={loadData} />}
-              {activeTab === 'cloMapping' && <CloMapping clos={data.cloMapped} refresh={loadData} />}
-              {activeTab === 'courseSyllabus' && <CourseSyllabus />}
-              {activeTab === 'coursePortfolio' && <CoursePortfolio clos={data.cloMapped} refresh={loadData} />}
+              {activeTab === 'courseInfo' && <CourseInformation courses={data.courses} refresh={loadData} setActiveCourse={setActiveCourse} setActiveTab={setActiveTab} />}
+              {activeTab === 'cloMapping' && <CloMapping clos={data.cloMapped} refresh={loadData} activeCourse={activeCourse} />}
+              {activeTab === 'courseSyllabus' && <CourseSyllabus activeCourse={activeCourse} data={data} />}
+              {activeTab === 'coursePortfolio' && <CoursePortfolio clos={data.cloMapped} refresh={loadData} activeCourse={activeCourse} />}
             </>
           )}
         </div>

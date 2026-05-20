@@ -12,7 +12,7 @@ const saveToStorage = (key: string, value: any) => {
   localStorage.setItem(key, JSON.stringify(value));
 };
 
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxQ-B4LOWACg3PKLx-KfetUvqtWy233OZ0xOMYSpiJ0ZcvUXalwAmT7sYW9u2k-9plh/exec';
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxDtM-fZgcJUycy4MM4Kjs3nr94oaZUnE4YymrT7QzpWvE1QcjC5LDWpVlX5iyLppND/exec';
 
 const syncToGoogleSheets = async (action: string, data: any) => {
   try {
@@ -39,6 +39,28 @@ export const api = {
       syllabusList: getFromStorage('ipen_syllabus_list', []),
       portfolioList: getFromStorage('ipen_portfolio_list', []),
     };
+  },
+
+  async uploadFile(base64Data: string, filename: string, mimeType: string) {
+    try {
+      const response = await fetch(GOOGLE_SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ 
+          action: 'uploadFile', 
+          data: { base64: base64Data, filename, mimeType } 
+        })
+      });
+      const result = await response.json();
+      if (result.success && result.url) {
+        return { success: true, url: result.url };
+      } else {
+        throw new Error(result.error || 'Upload failed');
+      }
+    } catch (error: any) {
+      console.error('Failed to upload file to Drive:', error);
+      throw new Error(error.message || 'Network error during upload');
+    }
   },
 
   async saveCourse(courseData: any) {

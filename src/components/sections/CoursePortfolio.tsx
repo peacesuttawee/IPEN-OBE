@@ -6,6 +6,7 @@ export const CoursePortfolio: React.FC<{ clos: any[], refresh: () => void, activ
   const [portfolioData, setPortfolioData] = useState<any>({});
   const [status, setStatus] = useState<{message: string, type: 'ok'|'error'} | null>(null);
   const [loading, setLoading] = useState(false);
+  const [uploadingFiles, setUploadingFiles] = useState<Record<string, boolean>>({});
 
   const filteredClos = clos.filter(c => c.CourseCode === activeCourse?.CourseCode);
 
@@ -33,21 +34,41 @@ export const CoursePortfolio: React.FC<{ clos: any[], refresh: () => void, activ
     }));
   };
 
-  const handleFileUpload = (cloId: string, fileId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (cloId: string, fileId: string, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Mocking a file upload URL since there's no real backend
-      const mockUrl = `https://storage.mock/files/${encodeURIComponent(file.name)}`;
-      setPortfolioData((prev: any) => ({
-        ...prev,
-        [cloId]: {
-          ...prev[cloId],
-          files: {
-            ...(prev[cloId]?.files || {}),
-            [fileId]: mockUrl
-          }
+      const fileKey = `${cloId}_${fileId}`;
+      setUploadingFiles(prev => ({ ...prev, [fileKey]: true }));
+      
+      try {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        const base64Data = await new Promise<string>((resolve, reject) => {
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = error => reject(error);
+        });
+
+        const base64Content = base64Data.split(',')[1];
+        const res = await api.uploadFile(base64Content, file.name, file.type);
+        
+        if (res.success && res.url) {
+          setPortfolioData((prev: any) => ({
+            ...prev,
+            [cloId]: {
+              ...prev[cloId],
+              files: {
+                ...(prev[cloId]?.files || {}),
+                [fileId]: res.url
+              }
+            }
+          }));
+          setStatus({ message: 'อัปโหลดไฟล์ไปที่ Google Drive สำเร็จ', type: 'ok' });
         }
-      }));
+      } catch (err: any) {
+        setStatus({ message: `Upload error: ${err.message}`, type: 'error' });
+      } finally {
+        setUploadingFiles(prev => ({ ...prev, [fileKey]: false }));
+      }
     }
   };
 
@@ -149,22 +170,33 @@ export const CoursePortfolio: React.FC<{ clos: any[], refresh: () => void, activ
                   { id: 'Exam_File_URL', label: '3. ไฟล์คะแนน/ผลประเมิน' }
                 ].map(fileReq => {
                   const hasFile = portfolioData[c.CLOID]?.files?.[fileReq.id];
-                  const fileName = hasFile ? decodeURIComponent(hasFile.split('/').pop() || '') : '';
+                  const fileName = hasFile ? (hasFile.includes('drive.google.com') ? 'Google Drive Link' : decodeURIComponent(hasFile.split('/').pop() || '')) : '';
+                  const fileKey = `${c.CLOID}_${fileReq.id}`;
+                  const isUploading = uploadingFiles[fileKey];
+
                   return (
-                    <div key={fileReq.id} className={`border ${hasFile ? 'border-emerald-300 bg-emerald-50' : 'border-slate-200 bg-slate-50'} rounded-xl p-3 flex flex-col justify-between group/upload hover:border-purple-300 transition-colors`}>
+                    <div key={fileReq.id} className={`border ${hasFile ? 'border-emerald-300 bg-emerald-50' : 'border-slate-200 bg-slate-50'} rounded-xl p-3 flex flex-col justify-between group/upload hover:border-purple-300 transition-colors relative`}>
+                      {isUploading && (
+                        <div className="absolute inset-0 bg-white/80 z-20 flex flex-col items-center justify-center rounded-xl">
+                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-purple-700 mb-2"></div>
+                          <span className="text-[10px] text-purple-700 font-bold">Uploading...</span>
+                        </div>
+                      )}
+                      
                       <label className="text-xs mb-2 font-medium">{fileReq.label}</label>
                       
                       {hasFile && (
-                        <div className="mb-2 text-[10px] text-emerald-700 bg-emerald-100 p-1.5 rounded-md truncate" title={fileName}>
+                        <a href={hasFile} target="_blank" rel="noreferrer" className="mb-2 text-[10px] text-emerald-700 bg-emerald-100 p-1.5 rounded-md truncate hover:underline cursor-pointer block text-center" title={hasFile}>
                           ✅ {fileName}
-                        </div>
+                        </a>
                       )}
                       
                       <div className="relative overflow-hidden mt-auto">
                         <input 
                           type="file" 
                           onChange={(e) => handleFileUpload(c.CLOID, fileReq.id, e)}
-                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
+                          className={`absolute inset-0 w-full h-full opacity-0 z-10 ${isUploading ? 'cursor-not-allowed' : 'cursor-pointer'}`} 
+                          disabled={isUploading}
                         />
                         <div className={`bg-white border ${hasFile ? 'border-emerald-200' : 'border-slate-300'} rounded-lg p-2 text-center flex flex-col items-center gap-1 group-hover/upload:border-purple-400 group-hover/upload:bg-purple-50 transition-colors`}>
                           <UploadCloud className={`w-4 h-4 ${hasFile ? 'text-emerald-500' : 'text-slate-400'} group-hover/upload:text-purple-500`} />

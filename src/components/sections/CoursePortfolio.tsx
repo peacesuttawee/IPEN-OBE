@@ -33,6 +33,24 @@ export const CoursePortfolio: React.FC<{ clos: any[], refresh: () => void, activ
     }));
   };
 
+  const handleFileUpload = (cloId: string, fileId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Mocking a file upload URL since there's no real backend
+      const mockUrl = `https://storage.mock/files/${encodeURIComponent(file.name)}`;
+      setPortfolioData((prev: any) => ({
+        ...prev,
+        [cloId]: {
+          ...prev[cloId],
+          files: {
+            ...(prev[cloId]?.files || {}),
+            [fileId]: mockUrl
+          }
+        }
+      }));
+    }
+  };
+
   const handleSave = async () => {
     setLoading(true);
     setStatus({ message: 'กำลังบันทึก Portfolio...', type: 'ok' });
@@ -104,7 +122,7 @@ export const CoursePortfolio: React.FC<{ clos: any[], refresh: () => void, activ
                 <div>
                   <label>Target (%)</label>
                   <div className="relative">
-                    <input type="number" value={portfolioData[c.CLOID]?.expected || 50} onChange={e => handleDataChange(c.CLOID, 'expected', e.target.value)} className="pr-8" />
+                    <input type="number" value={portfolioData[c.CLOID]?.expected ?? ''} onChange={e => handleDataChange(c.CLOID, 'expected', e.target.value)} className="pr-8" />
                     <span className="absolute right-3 top-[18px] text-slate-400 font-bold">%</span>
                   </div>
                 </div>
@@ -129,18 +147,33 @@ export const CoursePortfolio: React.FC<{ clos: any[], refresh: () => void, activ
                   { id: 'Question_Paper_File_URL', label: '1. ไฟล์ข้อสอบที่ใช้วัด' },
                   { id: 'Answer_File_URL', label: '2. ไฟล์ตัวอย่างกระดาษคำตอบ' },
                   { id: 'Exam_File_URL', label: '3. ไฟล์คะแนน/ผลประเมิน' }
-                ].map(fileReq => (
-                  <div key={fileReq.id} className="border border-slate-200 rounded-xl p-3 bg-slate-50 flex flex-col justify-between group/upload hover:border-purple-300 transition-colors">
-                    <label className="text-xs mb-3">{fileReq.label}</label>
-                    <div className="relative overflow-hidden">
-                      <input type="file" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
-                      <div className="bg-white border border-slate-300 rounded-lg p-2 text-center flex flex-col items-center gap-1 group-hover/upload:border-purple-400 group-hover/upload:bg-purple-50 transition-colors">
-                        <UploadCloud className="w-5 h-5 text-slate-400 group-hover/upload:text-purple-500" />
-                        <span className="text-[10px] text-slate-500 font-medium">Choose File</span>
+                ].map(fileReq => {
+                  const hasFile = portfolioData[c.CLOID]?.files?.[fileReq.id];
+                  const fileName = hasFile ? decodeURIComponent(hasFile.split('/').pop() || '') : '';
+                  return (
+                    <div key={fileReq.id} className={`border ${hasFile ? 'border-emerald-300 bg-emerald-50' : 'border-slate-200 bg-slate-50'} rounded-xl p-3 flex flex-col justify-between group/upload hover:border-purple-300 transition-colors`}>
+                      <label className="text-xs mb-2 font-medium">{fileReq.label}</label>
+                      
+                      {hasFile && (
+                        <div className="mb-2 text-[10px] text-emerald-700 bg-emerald-100 p-1.5 rounded-md truncate" title={fileName}>
+                          ✅ {fileName}
+                        </div>
+                      )}
+                      
+                      <div className="relative overflow-hidden mt-auto">
+                        <input 
+                          type="file" 
+                          onChange={(e) => handleFileUpload(c.CLOID, fileReq.id, e)}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
+                        />
+                        <div className={`bg-white border ${hasFile ? 'border-emerald-200' : 'border-slate-300'} rounded-lg p-2 text-center flex flex-col items-center gap-1 group-hover/upload:border-purple-400 group-hover/upload:bg-purple-50 transition-colors`}>
+                          <UploadCloud className={`w-4 h-4 ${hasFile ? 'text-emerald-500' : 'text-slate-400'} group-hover/upload:text-purple-500`} />
+                          <span className="text-[10px] text-slate-500 font-medium">{hasFile ? 'เปลี่ยนไฟล์' : 'Choose File'}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               <label>ความเห็นผู้สอนใน CLO นี้

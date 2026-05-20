@@ -24,14 +24,19 @@ const subtitleMap: Record<string, string> = {
 function App() {
   const [activeTab, setActiveTab] = useState('courseInfo');
   const [activeCourse, setActiveCourse] = useState<any>(null);
-  const [data, setData] = useState({ courses: [], cloMapped: [] });
+  const [data, setData] = useState<any>({ courses: [], cloMapped: [], syllabusList: [], portfolioList: [] });
   const [loading, setLoading] = useState(true);
 
   const loadData = async () => {
     setLoading(true);
     try {
       const res = await api.getInitialData();
-      setData({ courses: res.courses, cloMapped: res.cloMapped });
+      setData({ 
+        courses: res.courses, 
+        cloMapped: res.cloMapped, 
+        syllabusList: res.syllabusList, 
+        portfolioList: res.portfolioList 
+      });
     } catch (err) {
       console.error(err);
     }
@@ -70,7 +75,7 @@ function App() {
               {activeTab === 'courseInfo' && <CourseInformation courses={data.courses} refresh={loadData} setActiveCourse={setActiveCourse} setActiveTab={setActiveTab} />}
               {activeTab === 'cloMapping' && <CloMapping clos={data.cloMapped} refresh={loadData} activeCourse={activeCourse} />}
               {activeTab === 'courseSyllabus' && <CourseSyllabus activeCourse={activeCourse} data={data} />}
-              {activeTab === 'coursePortfolio' && <CoursePortfolio clos={data.cloMapped} refresh={loadData} activeCourse={activeCourse} />}
+              {activeTab === 'coursePortfolio' && <CoursePortfolio clos={data.cloMapped} refresh={loadData} activeCourse={activeCourse} data={data} />}
             </>
           )}
         </div>
